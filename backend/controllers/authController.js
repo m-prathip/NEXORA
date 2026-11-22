@@ -8,6 +8,7 @@ const tokenUtil = require('../utils/token');
 const { parseUserAgent, getClientIp } = require('../utils/device');
 const { sendMail, emails } = require('../utils/email');
 const lockout = require('../middleware/lockout');
+const { generateAndSendVerification } = require('./verificationController');
 
 const publicUser = (u) => ({
   id: u._id, email: u.email, username: u.username,
@@ -92,14 +93,17 @@ const register = async (req, res) => {
       username: cleanUsername,
       email: cleanEmail,
       password,
+      role: 'USER',
       isVerified: false
     });
 
-    await createAndSendOtp({ user, email: cleanEmail, purpose: 'verify' })
-      .catch(err => console.error('OTP EMAIL FAILED:', err));
+    await Promise.allSettled([
+      createAndSendOtp({ user, email: cleanEmail, purpose: 'verify' }),
+      generateAndSendVerification({ user, email: cleanEmail })
+    ]);
 
     res.status(201).json({
-      message: 'Account created. Check your email for a verification code.',
+      message: 'Account created. Check your email for a verification link or code.',
       email: cleanEmail,
       requiresVerification: true
     });

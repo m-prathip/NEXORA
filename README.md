@@ -1,287 +1,139 @@
-# 🚀 Full-Stack Multi-User Portfolio publisher
+# ⚡ NEXORA — The Network for Builders
 
-A modern, responsive full-stack portfolio builder. Anyone can sign up, build their
-portfolio from an admin dashboard, and instantly get **their own shareable link and
-QR code** — e.g. `yourapp.com/u/jane-doe` — to put on a resume, LinkedIn, or business card.
+> **A modern professional networking and community platform combining portfolio publishing, reciprocal networking, developer communities, project collaboration ("Find My Teammate", "Build in Public"), career opportunities radar, real-time messaging, and Gemini AI.**
 
-> **Note on this version:** this app was converted from a single-admin template (one
-> hardcoded portfolio) into a true multi-user publisher (every account gets its own
-> portfolio, scoped and isolated from everyone else's). If you're upgrading from the
-> single-admin version, see [Migrating from the single-admin version](#-migrating-from-the-single-admin-version) below —
-> this is a breaking change to the data model and auth flow.
+---
+
+## 🚀 Overview
+
+NEXORA empowers software developers, AI/ML engineers, data scientists, UI/UX designers, researchers, and students to:
+- **Showcase Verifiable Work:** Host standalone 3D interactive portfolios at `/u/:username` backed by real GitHub code evidence.
+- **Build Meaningful Connections:** Send reciprocal connection requests, follow builders, and discover complementary peers.
+- **Engage in the Feed:** Publish Build-in-Public devlogs, project milestones, code snippets, and react with multi-reaction tokens.
+- **Find Teammates:** Publish and apply to collaboration calls with defined skill requirements and project pitches.
+- **Join Technical Communities:** Participate in domain-specific guilds (AI/ML, Web Architecture, Cloud Systems, Open Source).
+- **Radar for Opportunities:** Discover matched internships, entry roles, freelance contracts, and referrals.
+- **Gemini AI Integration:** Server-side AI executive summary generation, devlog polish, and career roadmaps.
+
+---
 
 ## 🛠 Tech Stack
 
-| Layer | Technology |
+| Layer | Technologies |
 |---|---|
-| Frontend | React 18 + Vite + Tailwind CSS |
-| Backend | Node.js + Express.js |
-| Database | MongoDB + Mongoose |
-| Auth | JWT (each user owns their own content) |
-| QR Codes | `qrcode` (generated server-side as PNG) |
-| Deploy | Vercel (frontend) + Render (backend) + MongoDB Atlas |
+| **Frontend** | React 19 / 18, Vite, Tailwind CSS, Three.js, React Three Fiber, Framer Motion, React Hot Toast |
+| **Backend** | Node.js, Express.js (REST API Gateway), Mongoose, Multer |
+| **Database** | MongoDB 7 / Atlas (Compound Indexes, Aggregations) |
+| **Security** | Helmet, HSTS, MongoSanitize, XSS input scrubbing, Bot rate limiters, HttpOnly SameSite refresh cookies |
+| **AI Engine** | Google Gemini 2.5 Flash (Secure server-side API integration with offline heuristic fallbacks) |
+| **DevOps** | Docker, Docker Compose, Nginx reverse proxy, Vercel SPA rewrites |
 
 ---
 
-## 📁 Project Structure
+## 📁 Repository Structure
 
 ```
 portfolio-project/
-├── frontend/          # React + Vite app
-│   └── src/
-│       ├── components/
-│       │   ├── admin/      # AdminCRUD reusable component
-│       │   ├── common/     # Spinner, Section, ProtectedRoute
-│       │   └── layout/     # Navbar, Footer (username-aware)
-│       ├── context/        # ThemeContext, AuthContext
-│       ├── pages/
-│       │   ├── Landing.jsx     # publisher homepage ("/")
-│       │   ├── PortfolioLayout.jsx  # Resolves /u/:username, handles not-found/not-setup
-│       │   ├── Home.jsx        # Rendered inside PortfolioLayout
-│       │   ├── Education.jsx
-│       │   ├── Projects.jsx
-│       │   ├── NotFound.jsx
-│       │   └── admin/      # Login, Signup, Dashboard, Profile, Share, Sections
-│       └── services/
-│           └── api.js      # Axios layer — getMine() vs getPublic(username) per resource
-└── backend/           # Express API
-    ├── controllers/   # authController, profileController, crudController, portfolioController
-    ├── middleware/    # auth.js (JWT), resolveUser.js (:username → account), upload.js
-    ├── models/        # User.js + all content schemas (each owns a `user` ref)
-    ├── routes/        # All API routes, incl. routes/portfolio.js (link + QR code)
-    └── server.js
+├── frontend/                     # React 19 + Tailwind client
+│   ├── src/
+│   │   ├── components/           # AppLayout, Navbars, Hero, Footers
+│   │   ├── context/              # AuthContext, ThemeContext, BackgroundContext
+│   │   ├── pages/
+│   │   │   ├── feed/             # Feed.jsx (Social devlogs & reactions)
+│   │   │   ├── network/          # Network.jsx (Connections & invitations)
+│   │   │   ├── discover/         # Discover.jsx (Builder & skill search)
+│   │   │   ├── communities/      # Communities.jsx (Domain guilds)
+│   │   │   ├── projects/         # ProjectHub.jsx (Find My Teammate)
+│   │   │   ├── opportunities/    # Opportunities.jsx (Internships & jobs)
+│   │   │   ├── events/           # Events.jsx (Hackathons & webinars)
+│   │   │   ├── messages/         # Messages.jsx (Direct chat)
+│   │   │   ├── notifications/    # Notifications.jsx (Inbox alerts)
+│   │   │   └── profile/          # BuilderProfile.jsx (Profile & Gemini AI)
+│   │   └── services/api.js       # Centralized Axios API client
+│   └── vercel.json               # SPA client-side rewrite configuration
+│
+├── backend/                      # Node.js + Express API
+│   ├── config/db.js              # MongoDB connection
+│   ├── controllers/              # Business logic (network, posts, communities, ai, etc.)
+│   ├── middleware/               # auth.js, rateLimiters.js, sanitizeInput.js, upload.js
+│   ├── models/                   # Extended Mongoose schemas
+│   ├── routes/                   # Namespaced Express routers
+│   └── server.js                 # Express server with security middlewares
+│
+└── docker-compose.yml            # Multi-container orchestration (Mongo, Backend, Frontend)
 ```
 
 ---
 
-## ⚡ Quick Start (Local)
+## ⚡ Quick Start
 
-### 1. Setup Backend
+### 1. Prerequisites
+- Node.js (v18 or higher)
+- MongoDB instance (local or MongoDB Atlas connection string)
+- *(Optional)* Google Gemini API Key for AI features
 
-```bash
-cd portfolio-project/backend
-npm install
-cp .env.example .env
-# Edit .env with your MongoDB URI, JWT secret, and FRONTEND_URL
-npm run dev
-```
+### 2. Environment Variables
 
-### 2. Setup Frontend
-
-```bash
-cd portfolio-project/frontend
-npm install
-cp .env.example .env
-# Set VITE_API_URL=https://student-portfolio-ckpc.onrender.com
-npm run dev
-```
-
-### 3. Create an account
-
-There's no separate "admin setup" step anymore — anyone can create an account:
-
-1. Visit `https://portfoliopublisher.vercel.app`
-2. Pick a username (this becomes your permanent portfolio URL), email, and password
-3. You're redirected straight to **Share Your Portfolio**, showing your link and QR code
-
-Visit `https://portfoliopublisher.vercel.app` for the publisher homepage, `https://portfoliopublisher.vercel.app/u/<username>`
-for any published portfolio, and `https://portfoliopublisher.vercel.app` for the dashboard.
-
----
-
-## 🌐 API Reference
-
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Create an account (username + email + password) → JWT |
-| POST | `/api/auth/login` | Login with email **or** username → JWT |
-| GET | `/api/auth/check-username/:username` | Live availability check used on the signup form |
-| GET | `/api/auth/verify` | Verify token / fetch current session |
-
-### Content resources
-Education, Experience, Projects, Skills, Achievements, and Activities all share the same shape at `/api/<resource>`:
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/<resource>/me` | required | The logged-in user's own items (dashboard) |
-| GET | `/api/<resource>/public/:username` | none | That user's items, for their public portfolio |
-| POST | `/api/<resource>` | required | Create an item (owner is the logged-in user) |
-| PUT | `/api/<resource>/:id` | required | Update an item you own |
-| DELETE | `/api/<resource>/:id` | required | Delete an item you own |
-
-Profile follows the same pattern at `/api/profile/me` (GET/PUT) and `/api/profile/public/:username` (GET).
-
-### Sharing — link & QR code
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/portfolio/me/link` | required | `{ username, url }` for the logged-in user |
-| GET | `/api/portfolio/:username/qrcode` | none | Streams a PNG QR code that opens that user's portfolio. Public and hotlinkable — safe to use directly as an `<img src>` |
-
-Protected routes require an `Authorization: Bearer <token>` header. Ownership is always
-enforced server-side (by the authenticated user's id), so nobody can read, edit, or
-delete another account's data even if they guess an id.
-
----
-
-## 🔗 How sharing works
-
-Every account gets a permanent portfolio at `/u/<username>` (chosen at signup, lowercase
-letters/numbers/hyphens, 3-30 characters). The **Share** page in the dashboard
-(`/admin/share`) shows that link with a one-click copy button, plus a QR code rendered by
-the backend that points straight at it — useful as a downloadable PNG for resumes,
-slides, or printed cards. Visiting an unknown username shows a friendly "not found" page;
-visiting a real account that hasn't filled in their profile yet shows a "still under
-construction" page instead of a broken-looking empty portfolio.
-
----
-
-## 🔁 Migrating from the single-admin version
-
-This update replaces the single `Admin` model with a `User` model (every account has a
-unique `username`), and every content schema (`Profile`, `Education`, `Experience`,
-`Projects`, `Skills`, `Achievements`, `Activities`) now requires a `user` reference field
-for ownership. If you have existing data in MongoDB from the old single-admin version:
-
-1. It was tied to one implicit admin with no `user` field — back it up first.
-2. Create a new account via `/admin/signup` to get a real `User` document and id.
-3. Either re-enter the old content through the dashboard, or run a one-off script that
-   sets `user: <newUserId>` on every existing document in each collection.
-
-There's intentionally no auto-migration script included, since assuming who the "one"
-old admin should map to isn't safe to do automatically.
-
----
-
-## 🚢 Deployment
-
-### Backend → Render
-
-1. Push `backend/` to GitHub
-2. Create a new **Web Service** on [render.com](https://render.com)
-3. Set **Build Command**: `npm install`
-4. Set **Start Command**: `node server.js`
-5. Add environment variables:
-   ```
-   MONGO_URI=mongodb+srv://...
-   JWT_SECRET=your_secret_here
-   NODE_ENV=production
-   FRONTEND_URL=https://your-app.vercel.app
-   ```
-   `FRONTEND_URL` must exactly match your deployed frontend (no trailing slash) — it's
-   used for CORS **and** to build every user's share link and QR code, so a mismatch
-   here means QR codes will point to the wrong place.
-
-### Frontend → Vercel
-
-1. Push `frontend/` to GitHub
-2. Import to [vercel.com](https://vercel.com)
-3. Framework: **Vite**
-4. Add environment variable:
-   ```
-   VITE_API_URL=https://your-api.onrender.com
-   ```
-5. Deploy!
-
-### Database → MongoDB Atlas
-
-1. Create free cluster at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
-2. Create a database user
-3. Whitelist `0.0.0.0/0` (or Render's IPs)
-4. Copy the connection string to `MONGO_URI`
-
----
-
-## 🔑 Environment Variables
-
-**Backend `.env`**
+Create `backend/.env`:
 ```env
 PORT=5000
-MONGO_URI=mongodb+srv://<user>:<pass>@cluster0.mongodb.net/portfolio
-JWT_SECRET=super_secret_random_string_here
 NODE_ENV=development
-FRONTEND_URL=https://portfoliopublisher.vercel.app
+MONGO_URI=mongodb://localhost:27017/nexora
+FRONTEND_URL=http://localhost:5173
+
+JWT_SECRET=your_jwt_secret_here
+JWT_REFRESH_SECRET=your_refresh_secret_here
+OTP_PEPPER=your_otp_pepper_string
+
+# Optional: Gemini AI key (offline fallback active if unset)
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-**Frontend `.env`**
+Create `frontend/.env`:
 ```env
-VITE_API_URL=https://student-portfolio-ckpc.onrender.com
+VITE_API_URL=http://localhost:5000
 ```
 
----
+### 3. Run Locally
 
-## 🔒 Security Architecture & Hardening
+**Backend:**
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-This project incorporates production-ready security engineering controls:
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-### 🔑 Authentication & Session Security
-- **Secure Password Hashing**: Passwords hashed using `bcryptjs` with cost factor 12.
-- **Session Management & Refresh Rotation**: Short-lived JWT access tokens stored in volatile memory, coupled with long-lived session refresh tokens in `HttpOnly`, `Secure`, `SameSite` cookies. Refresh token rotation revokes all active sessions upon detected token reuse.
-- **Email & Reset Security**: OTP verification codes hashed via HMAC/SHA-256 with short expiration windows. Password reset links issue short-lived (10m) single-purpose JWT tokens and invalidate all active sessions upon completion.
-
-### 🛡 Authorization & IDOR Protection
-- **Ownership Verification**: All state-modifying operations (`PUT`, `DELETE`, `PATCH`) and private queries explicitly enforce user ownership (`{ _id: id, user: req.user.id }`). Prevents Insecure Direct Object Reference (IDOR) attacks even if object IDs are known or guessed.
-
-### 🛑 Abuse Protection & Rate Limiting
-- **Account Creation Throttling (`registerLimiter`)**: Max 5 registrations per hour per IP.
-- **Login Brute-Force Throttling (`loginLimiter` + `lockout`)**: Max 5 login attempts per 15 minutes per IP with automated temporary account lockouts.
-- **AI Request Throttling (`aiLimiter`)**: Max 10 AI assistant queries per 15 minutes per IP to safeguard LLM quotas.
-- **Global API Throttling (`apiLimiter`)**: Max 100 requests per 15 minutes per IP.
-- **Anti-Bot & Anti-Scraping (`botProtection`)**: Blocks known automated scraping scripts, security scanners (`python-requests`, `scrapy`, `sqlmap`, `nmap`, etc.), and missing User-Agent headers on write routes.
-
-### 🧹 Input Validation & Sanitization
-- **NoSQL Injection Prevention**: `express-mongo-sanitize` strips `$` and `.` MongoDB query operators.
-- **XSS & Script Injection Prevention**: `sanitizeInput` middleware recursively strips executable `<script>` blocks, inline event handlers (`onload=`, `onerror=`), and `javascript:` URLs.
-- **Upload Hardening**: Restricts uploads strictly to images (`jpeg`, `jpg`, `png`, `gif`, `webp`) and documents (`pdf`), capped at 5MB, with randomized server-side filenames.
-
-### 🌐 Secure Deployment & Logging
-- **HTTPS Enforcement**: Automatic HTTP-to-HTTPS 301 redirection in production.
-- **HSTS Headers**: 1-year HSTS (`max-age=31536000`), `includeSubDomains`, and `preload` enabled via Helmet.
-- **Structured Security Logging**: `securityLogger.js` logs authentication events, rate-limit breaches, API errors, and suspicious traffic patterns.
+The application will be live at:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:5000`
 
 ---
 
-## ✨ Features
+## 🐳 Docker Deployment
 
-- **Multi-user accounts** — anyone can sign up and get an isolated, fully-owned portfolio
-- **AI Assistant Widget** — embedded intelligent assistant that answers questions about skills and experiences
-- **Interactive 3D Backgrounds** — customizable visual themes including neural networks, matrices, and cosmic spaces
-- **Shareable link & downloadable QR code** for every account (`/admin/share`)
-- **Permanent username-based URLs**: `yourapp.com/u/<username>`
-- **Admin dashboard** with full CRUD for every section, scoped to the logged-in user
-- **Dark/Light mode** with system preference detection
-- **Security & Anti-Abuse Hardening** — IDOR defense, rate limiting, anti-bot filtering, XSS/NoSQL sanitization, and HSTS
-- **JWT authentication with HttpOnly session cookies**
-- **Image & PDF upload** support (Multer)
-- **Search & filter** on the projects page
-- **Scroll animations** on all sections
-- **Responsive** — mobile-first design
-- **Toast notifications** for all actions
+To launch the full stack (Frontend, Backend, and MongoDB) in Docker:
+```bash
+docker-compose up --build
+```
+Access the application on `http://localhost:8080`.
 
 ---
 
-## 🧑‍💻 VS Code Setup
+## 🔒 Security Architecture
 
-Install these extensions:
-- **ESLint** — linting
-- **Prettier** — formatting
-- **Tailwind CSS IntelliSense** — class autocomplete
-- **ES7+ React snippets** — component shortcuts
-- **MongoDB for VS Code** — database explorer
-- **REST Client** — test APIs without Postman
+- **HttpOnly Refresh Cookies:** JWT access token kept in memory; long-lived sessions verified via secure HttpOnly cookies to mitigate XSS credential theft.
+- **NoSQL Injection Defense:** All incoming inputs sanitized via `express-mongo-sanitize`.
+- **Anti-Abuse Rate Limiting:** Global API rate limiters and bot protection guards prevent brute force and denial of service attacks.
+- **Resource Ownership:** Controllers strictly verify document ownership before permitting updates or deletions.
 
 ---
 
-## 👨‍💻 About the Developer
-
-**PRATHIP M**
-- **B.Tech Artificial Intelligence & Data Science**, PMC TECH Engineering College
-- **Diploma in Computer Engineering**
-
-A passionate software engineer with a strong foundation in both traditional and modern computing technologies. Dedicated to building intelligent, seamless, and stunning online experiences.
-
----
-
-## 📜 License
-
-MIT — free to use and modify.
+## 📄 License
+MIT © NEXORA

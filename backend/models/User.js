@@ -8,7 +8,9 @@ const RESERVED_USERNAMES = [
   'signup', 'signin', 'register', 'settings', 'dashboard', 'support',
   'help', 'about', 'contact', 'portfolio', 'portfolios', 'public',
   'static', 'assets', 'root', 'null', 'undefined', 'me', 'user', 'users',
-  'u', 'www', 'mail', 'ftp', 'share', 'verify', 'reset', 'forgot'
+  'u', 'www', 'mail', 'ftp', 'share', 'verify', 'reset', 'forgot',
+  'feed', 'network', 'discover', 'communities', 'projects', 'opportunities',
+  'events', 'messages', 'notifications', 'nexora', 'collaborations'
 ];
 
 // 3-30 characters, lowercase letters/numbers/hyphens, can't start or end
@@ -47,10 +49,83 @@ const userSchema = new mongoose.Schema({
   // with .select('+password'). Prevents accidental hash leakage.
   password: { type: String, required: true, minlength: 8, select: false },
 
-  // Account is inactive until the email is verified via OTP.
+  // Account is inactive until the email is verified via OTP or token link.
   isVerified: { type: Boolean, default: false },
 
-  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  role: { 
+    type: String, 
+    enum: ['USER', 'MODERATOR', 'ADMIN', 'SUPER_ADMIN', 'user', 'admin'], 
+    default: 'USER',
+    index: true
+  },
+
+  // Account status and suspension tracking
+  status: {
+    type: String,
+    enum: ['active', 'suspended', 'restricted'],
+    default: 'active',
+    index: true
+  },
+  suspension: {
+    isSuspended: { type: Boolean, default: false, index: true },
+    reason: { type: String, default: '' },
+    expiresAt: { type: Date, default: null },
+    suspendedAt: { type: Date, default: null },
+    suspendedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    adminNotes: { type: String, default: '' },
+    history: [{
+      reason: { type: String },
+      durationDays: { type: Number },
+      suspendedAt: { type: Date },
+      suspendedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      restoredAt: { type: Date },
+      restoredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      notes: { type: String }
+    }]
+  },
+
+  // NEXORA Builder Fields
+  name: { type: String, trim: true, default: '' },
+  headline: { type: String, trim: true, default: '' },
+  avatar: { type: String, default: '' },
+  bannerImage: { type: String, default: '' },
+  bio: { type: String, trim: true, default: '' },
+  location: { type: String, trim: true, default: '' },
+  college: { type: String, trim: true, default: '' },
+  department: { type: String, trim: true, default: '' },
+  degree: { type: String, trim: true, default: '' },
+  graduationYear: { type: String, trim: true, default: '' },
+  skills: [{ type: String, trim: true }],
+  interests: [{ type: String, trim: true }],
+  isOnboarded: { type: Boolean, default: false },
+  primaryRole: { 
+    type: String, 
+    enum: ['Student', 'Software Engineer', 'Frontend Developer', 'Backend Developer', 
+          'Full-Stack Developer', 'AI/ML Engineer', 'Data Scientist', 'UI/UX Designer', 
+          'Researcher', 'Freelancer', 'Recruiter', 'Engineering Leader', 'Other'],
+    default: 'Software Engineer'
+  },
+  experienceLevel: {
+    type: String,
+    enum: ['Student', 'Entry-Level / Fresher', 'Mid-Level', 'Senior', 'Lead / Staff'],
+    default: 'Entry-Level / Fresher'
+  },
+  reputationPoints: { type: Number, default: 100, index: true },
+  followersCount: { type: Number, default: 0 },
+  followingCount: { type: Number, default: 0 },
+  connectionsCount: { type: Number, default: 0 },
+  isPrivate: { type: Boolean, default: false },
+  privacy: {
+    profileVisibility: { type: String, enum: ['public', 'network', 'private'], default: 'public' },
+    showOnlineStatus: { type: Boolean, default: true },
+    allowDirectMessages: { type: String, enum: ['everyone', 'connections'], default: 'everyone' },
+    searchEngineIndexing: { type: Boolean, default: true }
+  },
+  openToCollaborate: { type: Boolean, default: true },
+  openToWork: { type: Boolean, default: true },
+  githubUsername: { type: String, trim: true, default: '' },
+  linkedinUrl: { type: String, trim: true, default: '' },
+  websiteUrl: { type: String, trim: true, default: '' },
 
   // Active sessions (rotating refresh tokens). Revoking = pulling an entry.
   refreshTokens: { type: [refreshTokenSchema], default: [], select: false },

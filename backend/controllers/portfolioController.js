@@ -61,14 +61,14 @@ const getPublicPortfolio = async (req, res) => {
     // Exclude internal fields to reduce payload size for the public API
     const excludeFields = '-createdAt -updatedAt -__v';
     const [skills, projects, experience, education, achievements, certificates, activities, whyHire] = await Promise.all([
-      Skill.find({ user: userId }).select(excludeFields).sort('order').lean(),
-      Project.find({ user: userId }).select(excludeFields).sort('order').lean(),
-      Experience.find({ user: userId }).select(excludeFields).sort('-startDate').lean(),
-      Education.find({ user: userId }).select(excludeFields).sort('-startDate').lean(),
-      Achievement.find({ user: userId }).select(excludeFields).sort('-date').lean(),
-      Certificate.find({ user: userId }).select(excludeFields).sort('order').lean(),
-      Activity.find({ user: userId }).select(excludeFields).sort('-date').lean(),
-      WhyHire.find({ user: userId }).select(excludeFields).sort('order').lean()
+      Skill.find({ user: userId }).select(excludeFields).sort({ order: 1, createdAt: -1 }).lean(),
+      Project.find({ user: userId }).select(excludeFields).sort({ order: 1, createdAt: -1 }).lean(),
+      Experience.find({ user: userId }).select(excludeFields).sort({ order: 1, createdAt: -1 }).lean(),
+      Education.find({ user: userId }).select(excludeFields).sort({ order: 1, createdAt: -1 }).lean(),
+      Achievement.find({ user: userId }).select(excludeFields).sort({ order: 1, createdAt: -1 }).lean(),
+      Certificate.find({ user: userId }).select(excludeFields).sort({ order: 1, createdAt: -1 }).lean(),
+      Activity.find({ user: userId }).select(excludeFields).sort({ order: 1, createdAt: -1 }).lean(),
+      WhyHire.find({ user: userId }).select(excludeFields).sort({ order: 1, createdAt: -1 }).lean()
     ]);
 
     res.json({ 

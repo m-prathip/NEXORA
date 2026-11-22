@@ -108,7 +108,152 @@ export const authAPI = {
 export const profileAPI = {
   getMine: () => api.get('/profile/me'),
   updateMine: (d) => api.put('/profile/me', d, mp),
+  onboard: (d) => api.post('/profile/onboard', d, mp),
+  updatePrivacy: (d) => api.put('/profile/privacy', d),
   getPublic: (u) => api.get(`/profile/public/${u}`)
+};
+
+// ── NEXORA Networking API ───────────────────────────────
+export const networkAPI = {
+  sendRequest: (userId, d = {}) => api.post(`/network/connect/${userId}`, d),
+  respondRequest: (requestId, action) => api.patch(`/network/requests/${requestId}`, { action }),
+  getRequests: () => api.get('/network/requests'),
+  getConnections: () => api.get('/network/connections'),
+  getMutual: (userId) => api.get(`/network/mutual/${userId}`),
+  toggleFollow: (userId) => api.post(`/network/follow/${userId}`),
+  getSuggested: () => api.get('/network/suggested'),
+  search: (params) => api.get('/network/search', { params }),
+  discover: (params) => api.get('/network/discover', { params })
+};
+
+// ── NEXORA Social Feed & Posts API ───────────────────────
+export const postsAPI = {
+  getFeed: (params) => api.get('/posts', { params }),
+  getById: (id) => api.get(`/posts/${id}`),
+  create: (d) => api.post('/posts', d, mp),
+  update: (id, d) => api.put(`/posts/${id}`, d, mp),
+  delete: (id) => api.delete(`/posts/${id}`),
+  react: (id, type) => api.post(`/posts/${id}/react`, { type }),
+  toggleBookmark: (id) => api.post(`/posts/${id}/bookmark`),
+  getBookmarks: () => api.get('/posts/bookmarks'),
+  getComments: (id) => api.get(`/posts/${id}/comments`),
+  addComment: (id, d) => api.post(`/posts/${id}/comments`, d),
+  deleteComment: (postId, commentId) => api.delete(`/posts/${postId}/comments/${commentId}`),
+  getTrendingHashtags: () => api.get('/posts/trending/hashtags')
+};
+
+// ── NEXORA Communities API ──────────────────────────────
+export const communitiesAPI = {
+  getAll: (params) => api.get('/communities', { params }),
+  getBySlug: (slug) => api.get(`/communities/${slug}`),
+  create: (d) => api.post('/communities', d),
+  update: (id, d) => api.put(`/communities/${id}`, d),
+  toggleJoin: (communityId) => api.post(`/communities/${communityId}/join`),
+  getMembers: (communityId, params) => api.get(`/communities/${communityId}/members`, { params }),
+  updateMemberRole: (communityId, memberId, d) => api.patch(`/communities/${communityId}/members/${memberId}`, d),
+  getPosts: (communityId, params) => api.get(`/communities/${communityId}/posts`, { params }),
+  report: (communityId, d) => api.post(`/communities/${communityId}/report`, d)
+};
+
+// ── NEXORA Collaboration / "Find My Teammate" API ────────
+export const collabAPI = {
+  getAll: (params) => api.get('/collaborations', { params }),
+  getById: (id) => api.get(`/collaborations/${id}`),
+  create: (d) => api.post('/collaborations', d, mp),
+  update: (id, d) => api.put(`/collaborations/${id}`, d, mp),
+  delete: (id) => api.delete(`/collaborations/${id}`),
+  apply: (collabId, d) => api.post(`/collaborations/${collabId}/apply`, d),
+  respond: (collabId, appId, action) => api.patch(`/collaborations/${collabId}/applications/${appId}`, { action }),
+  getMyApplications: () => api.get('/collaborations/my/applications'),
+  matchTeammates: (params) => api.get('/collaborations/teammates/match', { params }),
+  report: (collabId, d) => api.post(`/collaborations/${collabId}/report`, d)
+};
+
+// ── NEXORA Content Reporting API ─────────────────────────
+export const reportsAPI = {
+  submit: (d) => api.post('/reports', d),
+  getAll: (params) => api.get('/reports', { params }),
+  resolve: (id, d) => api.patch(`/reports/${id}/resolve`, d),
+  assign: (id, moderatorId) => api.patch(`/reports/${id}/assign`, { moderatorId })
+};
+
+// ── NEXORA Email Verification API ─────────────────────────
+export const verificationAPI = {
+  verifyLink: (token) => api.post('/verification/verify', { token }),
+  resend: (email) => api.post('/verification/resend', { email }),
+  getStatus: (email) => api.get('/verification/status', { params: { email } })
+};
+
+// ── NEXORA User Blocking API ─────────────────────────────
+export const blocksAPI = {
+  block: (userId, reason = '') => api.post(`/blocks/${userId}`, { reason }),
+  unblock: (userId) => api.delete(`/blocks/${userId}`),
+  getBlocked: () => api.get('/blocks')
+};
+
+// ── NEXORA Admin & Trust/Safety API ───────────────────────
+export const adminAPI = {
+  getStats: () => api.get('/admin/stats'),
+  getUsers: (params) => api.get('/admin/users', { params }),
+  getUserDetails: (id) => api.get(`/admin/users/${id}`),
+  suspendUser: (id, d) => api.patch(`/admin/users/${id}/suspend`, d),
+  restoreUser: (id, d) => api.patch(`/admin/users/${id}/restore`, d),
+  updateUserRole: (id, d) => api.patch(`/admin/users/${id}/role`, d),
+  getPosts: (params) => api.get('/admin/posts', { params }),
+  moderatePost: (id, d) => api.patch(`/admin/posts/${id}/moderate`, d),
+  getCommunities: (params) => api.get('/admin/communities', { params }),
+  moderateCommunity: (id, d) => api.patch(`/admin/communities/${id}/moderate`, d),
+  getReports: (params) => api.get('/admin/reports', { params }),
+  resolveReport: (id, d) => api.patch(`/admin/reports/${id}/resolve`, d),
+  getOpportunities: (params) => api.get('/admin/opportunities', { params }),
+  moderateOpportunity: (id, d) => api.patch(`/admin/opportunities/${id}/moderate`, d),
+  getAnalytics: (params) => api.get('/admin/analytics', { params }),
+  getAuditLogs: (params) => api.get('/admin/audit-logs', { params }),
+  getSettings: () => api.get('/admin/settings'),
+  updateSettings: (d) => api.put('/admin/settings', d)
+};
+
+// ── NEXORA Opportunities API ─────────────────────────────
+export const opportunitiesAPI = {
+  getAll: (params) => api.get('/opportunities', { params }),
+  create: (d) => api.post('/opportunities', d),
+  toggleSave: (id) => api.post(`/opportunities/${id}/save`),
+  track: (id, d) => api.post(`/opportunities/${id}/track`, d),
+  apply: (id, d) => api.post(`/opportunities/${id}/track`, d),
+  getMyTracked: () => api.get('/opportunities/my/tracked')
+};
+
+// ── NEXORA Events & Hackathons API ───────────────────────
+export const eventsAPI = {
+  getAll: (params) => api.get('/events', { params }),
+  create: (d) => api.post('/events', d),
+  rsvp: (id, status) => api.post(`/events/${id}/rsvp`, { status })
+};
+
+// ── NEXORA Notifications API ────────────────────────────
+export const notificationsAPI = {
+  getAll: (params) => api.get('/notifications', { params }),
+  markRead: (notificationId) => api.patch('/notifications/read', { notificationId }),
+  markAllRead: () => api.patch('/notifications/read-all'),
+  markSingleRead: (id) => api.patch(`/notifications/${id}/read`)
+};
+
+// ── NEXORA Direct Messaging API ──────────────────────────
+export const messagesAPI = {
+  getConversations: () => api.get('/messages/conversations'),
+  getMessages: (conversationId) => api.get(`/messages/${conversationId}`),
+  send: (d) => api.post('/messages', d),
+  start: (recipientId) => api.post(`/messages/start/${recipientId}`)
+};
+
+// ── NEXORA Gemini AI Suite API ───────────────────────────
+export const aiAPI = {
+  profileImprove: () => api.post('/ai/profile-improve'),
+  headlineSummary: () => api.post('/ai/headline-summary'),
+  profileSummary: () => api.post('/ai/headline-summary'),
+  projectDescription: (d) => api.post('/ai/project-description', d),
+  polishPost: (draft, postType) => api.post('/ai/polish-post', { draft, postType }),
+  skillSuggestions: (d) => api.post('/ai/skill-suggestions', d)
 };
 export const educationAPI = {
   getMine: () => api.get('/education/me'),

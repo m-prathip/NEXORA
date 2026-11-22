@@ -1,13 +1,22 @@
 {
-  "name": "portfolio-project",
-  "version": "1.0.0",
-  "description": "Full-stack portfolio with admin dashboard",
+  "name": "nexora-network",
+  "version": "2.0.0",
+  "description": "NEXORA – Professional Networking and Community Ecosystem for Builders",
   "scripts": {
     "install:all": "cd backend && npm install && cd ../frontend && npm install",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "build:frontend": "cd frontend && npm run build"
   },
-  "keywords": ["portfolio", "react", "nodejs", "mongodb"],
+  "keywords": [
+    "nexora",
+    "professional-network",
+    "builder-community",
+    "developer-portfolio",
+    "react19",
+    "nodejs",
+    "mongodb",
+    "gemini-ai"
+  ],
   "license": "MIT"
 }

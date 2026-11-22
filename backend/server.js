@@ -78,10 +78,22 @@ app.use('/api/activities', require('./routes/activities'));
 app.use('/api/certificates', require('./routes/certificates'));
 app.use('/api/portfolio', require('./routes/portfolio'));
 app.use('/api/whyhire', require('./routes/whyHire'));
+app.use('/api/network', require('./routes/network'));
+app.use('/api/posts', require('./routes/posts'));
+app.use('/api/communities', require('./routes/communities'));
+app.use('/api/collaborations', require('./routes/collaborations'));
+app.use('/api/opportunities', require('./routes/opportunities'));
+app.use('/api/events', require('./routes/events'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/messages', require('./routes/messages'));
+app.use('/api/reports', require('./routes/reports'));
+app.use('/api/verification', require('./routes/verification'));
+app.use('/api/ai', require('./routes/ai'));
 
 // Health check
 app.get('/', (req, res) => res.json({ message: 'Portfolio API is running!' }));
 app.get('/health', (req, res) => res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() }));
+app.get('/api/health', (req, res) => res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() }));
 
 // ─── 404 Handler & Security Logging ─────────────────────
 app.use((req, res) => {
@@ -99,7 +111,7 @@ app.use((req, res) => {
 // ─── Centralized Error Handler ──────────────────────────
 app.use((err, req, res, next) => {
   const status = err.status || 500;
-  
+
   securityLogger.apiError({
     status,
     message: err.message,

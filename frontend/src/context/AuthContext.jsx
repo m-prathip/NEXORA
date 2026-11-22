@@ -56,12 +56,15 @@ export const AuthProvider = ({ children }) => {
     setAccessToken(null);
     setUser(null);
   };
-  console.log("AuthContext Render", user);
+
+  const updateUser = (updates) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : updates));
+  };
 
   return (
     <AuthContext.Provider value={{
       user, loading, isAuth: !!user,
-      login, register, verifyEmail, completeSession, logout
+      login, register, verifyEmail, completeSession, logout, updateUser
     }}>
       {children}
     </AuthContext.Provider>
