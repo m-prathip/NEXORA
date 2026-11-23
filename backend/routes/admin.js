@@ -4,7 +4,8 @@ const {
   protect, 
   requireModerator, 
   requireAdmin, 
-  requireSuperAdmin 
+  requireSuperAdmin,
+  requireReauth 
 } = require('../middleware/auth');
 
 const {
@@ -14,6 +15,7 @@ const {
   suspendUser,
   restoreUser,
   updateUserRole,
+  getAdministrators,
   getPosts,
   moderatePost,
   getCommunities,
@@ -27,38 +29,71 @@ const {
   updateSettings
 } = require('../controllers/adminController');
 
+const {
+  getReports,
+  resolveReport,
+  assignReport
+} = require('../controllers/reportController');
+
 // All admin routes require authenticated session
 router.use(protect);
 
-// ── Overview & Stats (Moderator+)
-router.get('/stats', requireModerator, getPlatformStats);
+// ── Overview & Stats (Admin & Super Admin)
+router.get('/stats', requireAdmin, getPlatformStats);
 
-// ── User Management
-router.get('/users', requireModerator, getUsers);
-router.get('/users/:id', requireModerator, getUserDetails);
-router.patch('/users/:id/suspend', requireModerator, suspendUser);
-router.patch('/users/:id/restore', requireModerator, restoreUser);
-router.patch('/users/:id/role', requireSuperAdmin, updateUserRole);
+// ── Dedicated Moderation Metrics (Moderators, Admins & Super Admins)
+router.get('/moderator/stats', requireModerator, async (req, res) => {
+  try {
+    const Report = require('../models/Report');
+    const Post = require('../models/Post');
+    const [pendingReports, flaggedPosts] = await Promise.all([
+      Report.countDocuments({ status: 'pending' }),
+      Post.countDocuments({ isReported: true, isDeleted: false })
+    ]);
+    res.json({
+      pendingReports,
+      flaggedPosts,
+      role: req.user.role
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
-// ── Content & Community Moderation
+// ── User Management (Admin & Super Admin only)
+router.get('/users', requireAdmin, getUsers);
+router.get('/users/:id', requireAdmin, getUserDetails);
+router.patch('/users/:id/suspend', requireAdmin, suspendUser);
+router.patch('/users/:id/restore', requireAdmin, restoreUser);
+
+// ── Administrator & Role Management (Super Admin only - with re-auth)
+router.get('/administrators', requireAdmin, getAdministrators);
+router.patch('/users/:id/role', requireSuperAdmin, requireReauth, updateUserRole);
+
+// ── Reports & Complaints Moderation (Moderators, Admins & Super Admins)
+router.get('/reports', requireModerator, getReports);
+router.patch('/reports/:id/resolve', requireModerator, resolveReport);
+router.patch('/reports/:id/assign', requireModerator, assignReport);
+
+// ── Content & Community Moderation (Moderators, Admins & Super Admins)
 router.get('/posts', requireModerator, getPosts);
 router.patch('/posts/:id/moderate', requireModerator, moderatePost);
 router.get('/communities', requireModerator, getCommunities);
 router.patch('/communities/:id/moderate', requireModerator, moderateCommunity);
 
-// ── Opportunities Moderation
-router.get('/opportunities', requireModerator, getOpportunities);
-router.patch('/opportunities/:id/moderate', requireModerator, moderateOpportunity);
+// ── Opportunities Moderation (Admin & Super Admin)
+router.get('/opportunities', requireAdmin, getOpportunities);
+router.patch('/opportunities/:id/moderate', requireAdmin, moderateOpportunity);
 
-// ── Platform Analytics & Export
-router.get('/analytics', requireModerator, getAnalytics);
-router.get('/analytics/export', requireAdmin, exportAnalyticsData);
+// ── Platform Analytics & Export (Admin & Super Admin)
+router.get('/analytics', requireAdmin, getAnalytics);
+router.get('/analytics/export', requireAdmin, requireReauth, exportAnalyticsData);
 
-// ── Immutable Audit Logs
+// ── Immutable Audit Logs (Admin & Super Admin)
 router.get('/audit-logs', requireAdmin, getAuditLogs);
 
-// ── Platform Settings
-router.get('/settings', requireAdmin, getSettings);
-router.put('/settings', requireAdmin, updateSettings);
+// ── Platform Security & System Settings (Super Admin only - with re-auth for updates)
+router.get('/settings', requireSuperAdmin, getSettings);
+router.put('/settings', requireSuperAdmin, requireReauth, updateSettings);
 
 module.exports = router;

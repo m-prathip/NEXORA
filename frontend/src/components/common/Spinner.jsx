@@ -40,4 +40,5 @@ export const PageLoader = () => {
   );
 };
 
+export { Spinner };
 export default Spinner;

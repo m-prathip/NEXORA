@@ -4,7 +4,7 @@ const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const Community = require('../models/Community');
 const Opportunity = require('../models/Opportunity');
-const Collaboration = require('../models/Collaboration');
+const Collaboration = require('../models/CollaborationRequest');
 const Report = require('../models/Report');
 const AuditLog = require('../models/AuditLog');
 const ModerationAction = require('../models/ModerationAction');
@@ -174,6 +174,10 @@ const suspendUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    if (targetUser.role === 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Super Administrator accounts are sovereign and cannot be suspended' });
+    }
+
     // Role hierarchy protection: cannot suspend higher or equal ranked admin unless super admin
     const actorRank = ROLE_HIERARCHY[(req.user.role || 'USER').toUpperCase()] || 1;
     const targetRank = ROLE_HIERARCHY[(targetUser.role || 'USER').toUpperCase()] || 1;
@@ -254,6 +258,10 @@ const restoreUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    if (targetUser.role === 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Super Administrator accounts are sovereign and cannot be suspended' });
+    }
+
     if (!targetUser.suspension?.isSuspended && targetUser.status !== 'suspended') {
       return res.status(400).json({ message: 'User is not currently suspended' });
     }
@@ -321,6 +329,10 @@ const updateUserRole = async (req, res) => {
     const targetUser = await User.findById(id);
     if (!targetUser) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (targetUser.role === 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Super Administrator accounts are sovereign and cannot be suspended' });
     }
 
     const previousRole = (targetUser.role || 'USER').toUpperCase();
@@ -945,7 +957,9 @@ const getSettings = async (req, res) => {
 
 const updateSettings = async (req, res) => {
   try {
-    const updates = req.body;
+    const updates = { ...req.body };
+    delete updates.adminPassword; // Never persist the re-authentication password
+
     for (const [key, value] of Object.entries(updates)) {
       await PlatformSetting.findOneAndUpdate(
         { key },
@@ -967,6 +981,22 @@ const updateSettings = async (req, res) => {
   }
 };
 
+// ── 9. Administrator & Moderator Roster ─────────────────────────────────────
+const getAdministrators = async (req, res) => {
+  try {
+    const admins = await User.find({
+      role: { $in: ['MODERATOR', 'ADMIN', 'SUPER_ADMIN'] }
+    })
+      .select('username email role name status avatar createdAt lastLogin')
+      .sort({ role: 1, createdAt: -1 })
+      .lean();
+
+    res.json(admins);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getPlatformStats,
   getUsers,
@@ -974,6 +1004,7 @@ module.exports = {
   suspendUser,
   restoreUser,
   updateUserRole,
+  getAdministrators,
   getPosts,
   moderatePost,
   getCommunities,

@@ -11,7 +11,10 @@
     "test:ai": "node tests/nexora.ai.opportunities.test.js",
     "test:collab": "node tests/nexora.communities.collab.test.js",
     "test:social": "node tests/nexora.social.engine.test.js",
-    "test:auth": "node tests/nexora.auth.profile.test.js"
+    "test:auth": "node tests/nexora.auth.profile.test.js",
+    "test:secure-routes": "node tests/nexora.url.encryption.test.js",
+    "test:rbac": "node tests/nexora.rbac.admin.test.js",
+    "test:owner": "node tests/nexora.owner.security.test.js"
   },
   "dependencies": {
     "@getbrevo/brevo": "^5.0.4",

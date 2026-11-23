@@ -213,6 +213,18 @@ export const adminAPI = {
   updateSettings: (d) => api.put('/admin/settings', d)
 };
 
+// ── NEXORA Exclusive Super Admin / Owner Control API ──────
+export const ownerAPI = {
+  getOverview: () => api.get('/owner/overview'),
+  getSystemHealth: () => api.get('/owner/system-health'),
+  getSecurityMonitoring: () => api.get('/owner/security-monitoring'),
+  getAdministrators: () => api.get('/owner/administrators'),
+  revokeAdministrator: (id, d) => api.patch(`/owner/administrators/${id}/revoke`, d),
+  assignRole: (id, d) => api.patch(`/owner/roles/${id}`, d),
+  getPlatformSettings: () => api.get('/owner/platform-settings'),
+  updatePlatformSettings: (d) => api.put('/owner/platform-settings', d)
+};
+
 // ── NEXORA Opportunities API ─────────────────────────────
 export const opportunitiesAPI = {
   getAll: (params) => api.get('/opportunities', { params }),
@@ -348,5 +360,12 @@ export const portfolioPublicAPI = {
 };
 
 
+
+// ── Encrypted URL & Route Token API ───────────────────────
+export const secureRouteAPI = {
+  decryptToken: (encryptedToken) => api.post('/secure-routes/decrypt', { encryptedToken }),
+  generateToken: (data) => api.post('/secure-routes/generate', data),
+  revokeToken: (data) => api.post('/secure-routes/revoke', data)
+};
 
 export default api;

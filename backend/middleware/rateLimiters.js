@@ -65,6 +65,24 @@ const apiLimiter = rateLimit({
   handler: handleLimit('Too many API requests from this IP. Throttled for abuse protection.', 'apiLimiter')
 });
 
+// Rate limiter for secure encrypted route token decryption and generation
+const secureRouteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 60, // 60 token resolutions per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: handleLimit('Too many secure route operations. Please try again later.', 'secureRouteLimiter')
+});
+
+// Rate limiter for exclusive Super Admin / Owner Control API routes
+const ownerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 60, // 60 requests per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: handleLimit('Too many Super Admin requests from this IP. Temporarily throttled.', 'ownerLimiter')
+});
+
 // Bot & Automated Script Protection Middleware
 const BAD_USER_AGENTS = [
   /scrapy/i,
@@ -123,5 +141,7 @@ module.exports = {
   forgotLimiter,
   aiLimiter,
   apiLimiter,
+  secureRouteLimiter,
+  ownerLimiter,
   botProtection
 };

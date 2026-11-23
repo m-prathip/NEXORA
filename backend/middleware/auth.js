@@ -105,6 +105,85 @@ const requireModerator = requireRole('MODERATOR');
 const requireAdmin = requireRole('ADMIN');
 const requireSuperAdmin = requireRole('SUPER_ADMIN');
 
+const ROLE_PERMISSIONS = {
+  USER: [
+    'profile:read_self', 'profile:update_self', 'content:create',
+    'content:delete_own', 'report:create'
+  ],
+  MODERATOR: [
+    'profile:read_self', 'profile:update_self', 'content:create',
+    'content:delete_own', 'report:create', 'report:review',
+    'report:resolve', 'content:moderate', 'community:moderate'
+  ],
+  ADMIN: [
+    'profile:read_self', 'profile:update_self', 'content:create',
+    'content:delete_own', 'report:create', 'report:review',
+    'report:resolve', 'content:moderate', 'community:moderate',
+    'users:list_all', 'users:view_details', 'users:suspend',
+    'users:restore', 'moderator:manage', 'opportunities:review',
+    'analytics:view', 'analytics:export', 'audit_logs:view'
+  ],
+  SUPER_ADMIN: [
+    'profile:read_self', 'profile:update_self', 'content:create',
+    'content:delete_own', 'report:create', 'report:review',
+    'report:resolve', 'content:moderate', 'community:moderate',
+    'users:list_all', 'users:view_details', 'users:suspend',
+    'users:restore', 'moderator:manage', 'opportunities:review',
+    'analytics:view', 'analytics:export', 'audit_logs:view',
+    'admin:manage_roles', 'security:manage', 'platform:settings'
+  ]
+};
+
+const requirePermission = (permission) => (req, res, next) => {
+  if (!req.user || !req.user.role) {
+    return res.status(403).json({ message: 'Forbidden: Authentication required' });
+  }
+
+  const userRole = (req.user.role || 'USER').toUpperCase();
+  const allowedPermissions = ROLE_PERMISSIONS[userRole] || [];
+
+  if (userRole === 'SUPER_ADMIN' || allowedPermissions.includes(permission)) {
+    return next();
+  }
+
+  return res.status(403).json({
+    message: `Forbidden: Missing required permission "${permission}"`,
+    requiredPermission: permission,
+    currentRole: userRole
+  });
+};
+
+// Re-authentication middleware for destructive or critical security operations
+const requireReauth = async (req, res, next) => {
+  try {
+    const password = req.body?.adminPassword || req.headers['x-admin-password'];
+    if (!password) {
+      return res.status(401).json({
+        message: 'Re-authentication required: Please enter your password to confirm this action',
+        requiresReauth: true
+      });
+    }
+
+    const bcrypt = require('bcryptjs');
+    const userWithPassword = await User.findById(req.user.id).select('+password');
+    if (!userWithPassword) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(password, userWithPassword.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        message: 'Re-authentication failed: Incorrect password confirmation',
+        requiresReauth: true
+      });
+    }
+
+    next();
+  } catch (err) {
+    res.status(500).json({ message: 'Re-authentication error' });
+  }
+};
+
 // Optional auth: attaches req.user if valid token provided, but doesn't block unauthenticated guests
 const optionalAuth = async (req, res, next) => {
   try {
@@ -147,6 +226,9 @@ module.exports = {
   requireModerator, 
   requireAdmin, 
   requireSuperAdmin, 
+  requirePermission,
+  requireReauth,
+  ROLE_PERMISSIONS,
   optionalAuth,
   ROLE_HIERARCHY
 };

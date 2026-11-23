@@ -20,17 +20,40 @@ import {
   FiLogOut
 } from 'react-icons/fi';
 
-const navItems = [
-  { name: 'Overview', path: '/admin', icon: FiGrid, exact: true },
-  { name: 'Users', path: '/admin/users', icon: FiUsers },
-  { name: 'Posts', path: '/admin/posts', icon: FiFileText },
-  { name: 'Communities', path: '/admin/communities', icon: FiShare2 },
-  { name: 'Reports & Tickets', path: '/admin/reports', icon: FiAlertTriangle },
-  { name: 'Opportunities', path: '/admin/opportunities', icon: FiBriefcase },
-  { name: 'Platform Analytics', path: '/admin/analytics', icon: FiBarChart2 },
-  { name: 'Audit Logs', path: '/admin/audit-logs', icon: FiShield },
-  { name: 'Platform Settings', path: '/admin/settings', icon: FiSettings }
-];
+const getNavItems = (userRole) => {
+  if (userRole === 'MODERATOR') {
+    return [
+      { name: 'Overview', path: '/moderator', icon: FiGrid, exact: true },
+      { name: 'Reports Queue', path: '/moderator/reports', icon: FiAlertTriangle },
+      { name: 'Content Moderation', path: '/moderator/content', icon: FiFileText },
+      { name: 'Communities', path: '/moderator/communities', icon: FiShare2 }
+    ];
+  }
+
+  const items = [
+    { name: 'Overview', path: '/admin', icon: FiGrid, exact: true },
+    { name: 'User Directory', path: '/admin/users', icon: FiUsers },
+    { name: 'Reports & Tickets', path: '/admin/reports', icon: FiAlertTriangle },
+    { name: 'Communities', path: '/admin/communities', icon: FiShare2 },
+    { name: 'Opportunities', path: '/admin/opportunities', icon: FiBriefcase },
+    { name: 'Platform Analytics', path: '/admin/analytics', icon: FiBarChart2 },
+    { name: 'Audit Logs', path: '/admin/audit-logs', icon: FiShield }
+  ];
+
+  if (userRole === 'SUPER_ADMIN') {
+    items.push(
+      { name: 'Security Policies', path: '/admin/security', icon: FiShield },
+      { name: 'Roles & Admins', path: '/admin/roles', icon: FiUsers },
+      { name: 'Platform Settings', path: '/admin/platform-settings', icon: FiSettings }
+    );
+  } else {
+    items.push(
+      { name: 'System Settings', path: '/admin/settings', icon: FiSettings }
+    );
+  }
+
+  return items;
+};
 
 const AdminDashboardLayout = () => {
   const { user, logout } = useAuth();
@@ -39,6 +62,7 @@ const AdminDashboardLayout = () => {
   const navigate = useNavigate();
 
   const role = (user?.role || 'USER').toUpperCase();
+  const navItems = getNavItems(role);
 
   const getRoleBadge = () => {
     switch (role) {

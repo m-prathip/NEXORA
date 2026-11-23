@@ -89,6 +89,9 @@ app.use('/api/messages', require('./routes/messages'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/verification', require('./routes/verification'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/owner', require('./routes/owner'));
+app.use('/api/secure-routes', require('./routes/secureRoutes'));
 
 // Health check
 app.get('/', (req, res) => res.json({ message: 'Portfolio API is running!' }));

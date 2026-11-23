@@ -19,6 +19,8 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const connectDB = require('../config/db');
 const User = require('../models/User');
+const PlatformSetting = require('../models/PlatformSetting');
+const AuditLog = require('../models/AuditLog');
 
 async function bootstrapAdmin() {
   console.log('========================================================');
@@ -28,10 +30,23 @@ async function bootstrapAdmin() {
   try {
     await connectDB();
 
+    if (process.env.DISABLE_ADMIN_BOOTSTRAP === 'true') {
+      console.log('[SECURITY] Administrator bootstrap is permanently disabled on this server instance (DISABLE_ADMIN_BOOTSTRAP=true).');
+      process.exit(0);
+    }
+
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@nexora.dev').toLowerCase().trim();
     const adminUsername = (process.env.ADMIN_USERNAME || 'nexora_admin').toLowerCase().trim();
     const adminPassword = process.env.ADMIN_PASSWORD || 'NexoraAdmin2026!Secure';
     const force = process.argv.includes('--force');
+
+    // Check if bootstrap lock is set in database
+    const isLocked = await PlatformSetting.findOne({ key: 'SUPER_ADMIN_BOOTSTRAP_LOCKED', value: true });
+    if (isLocked && !force) {
+      console.log('[SECURITY] Super Admin bootstrap is permanently locked in database.');
+      console.log('[SECURITY] Use CLI with --force for emergency recovery mode.\n');
+      process.exit(0);
+    }
 
     // Check if any SUPER_ADMIN already exists
     const existingSuperAdmin = await User.findOne({ role: 'SUPER_ADMIN' });
@@ -71,6 +86,24 @@ async function bootstrapAdmin() {
       console.log(`[SUCCESS] SUPER_ADMIN account created successfully!`);
     }
 
+    // Permanently set the bootstrap lock in PlatformSetting
+    await PlatformSetting.findOneAndUpdate(
+      { key: 'SUPER_ADMIN_BOOTSTRAP_LOCKED' },
+      { $set: { value: true, description: 'Super Admin bootstrap completed and locked', updatedBy: user._id } },
+      { upsert: true }
+    );
+
+    await AuditLog.create({
+      actor: user._id,
+      actorRole: 'SUPER_ADMIN',
+      action: 'ADMIN_BOOTSTRAP_EXECUTED',
+      targetResource: 'User',
+      targetId: user._id,
+      metadata: { username: user.username, email: user.email },
+      reason: 'Initial Super Admin provisioned and bootstrap permanently locked'
+    }).catch(() => {});
+
+    console.log('[SECURITY] Super Admin bootstrap permanently locked.');
     console.log('\n--------------------------------------------------------');
     console.log(`Username:  ${user.username}`);
     console.log(`Email:     ${user.email}`);

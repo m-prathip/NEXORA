@@ -46,6 +46,9 @@ const VerifyEmail = lazy(() => import('./pages/admin/VerifyEmail'));
 const ForgotPassword = lazy(() => import('./pages/admin/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/admin/ResetPassword'));
 
+// AES-256-GCM Encrypted Route Handler
+const SecureRouteHandler = lazy(() => import('./pages/secure/SecureRouteHandler'));
+
 // User Portfolio CMS Dashboard
 const AdminLayout = lazy(() => import('./pages/admin/Dashboard'));
 const AdminProfile = lazy(() => import('./pages/admin/Profile'));
@@ -53,6 +56,8 @@ const AdminShare = lazy(() => import('./pages/admin/Share'));
 
 // NEXORA Platform Command Center & Administration
 const AdminRoute = lazy(() => import('./components/admin/AdminRoute'));
+const SuperAdminRoute = lazy(() => import('./components/admin/SuperAdminRoute'));
+const OwnerControlDashboard = lazy(() => import('./pages/owner/OwnerControlDashboard'));
 const AdminDashboardLayout = lazy(() => import('./components/admin/AdminDashboardLayout'));
 const PlatformAdminOverview = lazy(() => import('./pages/platformAdmin/AdminOverview'));
 const PlatformAdminUsers = lazy(() => import('./pages/platformAdmin/AdminUsers'));
@@ -95,6 +100,9 @@ const App = () => (
               <Route path="/auth/forgot-password" element={<ForgotPassword />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
 
+              {/* AES-256-GCM Encrypted Generic Route */}
+              <Route path="/secure/:encryptedToken" element={<SecureRouteHandler />} />
+
               {/* NEXORA Platform Core Modules (14 Navigation Views & Command Center) */}
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<MainDashboard />} />
@@ -111,17 +119,34 @@ const App = () => (
                 <Route path="/messages/:conversationId" element={<Messages />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/account/settings" element={<Navigate to="/settings" replace />} />
+                <Route path="/profile" element={<Navigate to="/profile/me" replace />} />
                 <Route path="/profile/me" element={<BuilderProfile />} />
                 <Route path="/profile/:username" element={<BuilderProfile />} />
               </Route>
 
               <Route path="/app" element={<Navigate to="/feed" replace />} />
 
+              {/* NEXORA Moderator Console */}
+              <Route
+                path="/moderator"
+                element={
+                  <AdminRoute allowedRoles={['MODERATOR', 'ADMIN', 'SUPER_ADMIN']}>
+                    <AdminDashboardLayout />
+                  </AdminRoute>
+                }
+              >
+                <Route index element={<PlatformAdminReports />} />
+                <Route path="reports" element={<PlatformAdminReports />} />
+                <Route path="content" element={<PlatformAdminPosts />} />
+                <Route path="communities" element={<PlatformAdminCommunities />} />
+              </Route>
+
               {/* NEXORA Platform Command Center & Administration */}
               <Route
                 path="/admin"
                 element={
-                  <AdminRoute>
+                  <AdminRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
                     <AdminDashboardLayout />
                   </AdminRoute>
                 }
@@ -135,7 +160,22 @@ const App = () => (
                 <Route path="analytics" element={<PlatformAdminAnalytics />} />
                 <Route path="audit-logs" element={<PlatformAdminAuditLogs />} />
                 <Route path="settings" element={<PlatformAdminSettings />} />
+                {/* Super Admin specific paths */}
+                <Route path="security" element={<PlatformAdminSettings />} />
+                <Route path="roles" element={<PlatformAdminUsers />} />
+                <Route path="administrators" element={<PlatformAdminUsers />} />
+                <Route path="platform-settings" element={<PlatformAdminSettings />} />
               </Route>
+
+              {/* Sovereign Developer Super Admin Console */}
+              <Route
+                path="/owner-control"
+                element={
+                  <SuperAdminRoute>
+                    <OwnerControlDashboard />
+                  </SuperAdminRoute>
+                }
+              />
 
               {/* Standalone 3D Public Portfolios */}
               <Route path="/u/:username" element={<PortfolioLayout />}>
